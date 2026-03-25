@@ -116,7 +116,29 @@
 </div>
 {% else %}
 <div class="card">
-    <p class="no-data">暂无调度配置，<a href="{{ url_for('main.schedule_add') }}">点击添加</a></p>
+    <div class="result-info">
+        <p>共找到 <strong>0</strong> 条配置</p>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>公司简称</th>
+                    <th>工作流名称</th>
+                    <th>调度类型</th>
+                    <th>调度配置</th>
+                    <th>最后更新时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="7" class="no-data-row">暂无数据，<a href="{{ url_for('main.schedule_add') }}">点击添加</a></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endif %}
 
@@ -302,6 +324,12 @@
     text-align: center;
     color: #999;
     padding: 2rem;
+}
+
+.no-data-row {
+    text-align: center;
+    color: #999;
+    padding: 2rem !important;
 }
 
 .table-responsive {
