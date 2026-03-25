@@ -159,15 +159,17 @@
 }
 
 .form-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    display: flex;
     gap: 1rem;
     align-items: flex-end;
+    flex-wrap: nowrap;
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
+    flex: 1;
+    min-width: 150px;
 }
 
 .form-group label {
