@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}表单示例 - Flask App{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>表单处理示例</h1>
+</div>
+
+<div class="form-section">
+    <form id="demo-form">
+        <div class="form-group">
+            <label for="name">姓名</label>
+            <input type="text" name="name" id="name" required placeholder="请输入姓名">
+        </div>
+        <div class="form-group">
+            <label for="email">邮箱</label>
+            <input type="email" name="email" id="email" required placeholder="请输入邮箱">
+        </div>
+        <button type="submit" class="btn">提交</button>
+    </form>
+    
+    <div id="response" class="result"></div>
+</div>
+
+<script>
+document.getElementById('demo-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const result = document.getElementById('response');
+    
+    try {
+        const response = await fetch('{{ url_for("main.form") }}', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        if (data.success) {
+            result.innerHTML = `
+                <div class="success">
+                    <p>提交成功!</p>
+                    <p>姓名: ${data.name}</p>
+                    <p>邮箱: ${data.email}</p>
+                </div>
+            `;
+            e.target.reset();
+        }
+    } catch (err) {
+        result.innerHTML = `<p class="error">错误: ${err.message}</p>`;
+    }
+});
+</script>
+{% endblock %}

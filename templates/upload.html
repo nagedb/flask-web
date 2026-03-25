@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}文件上传 - Flask App{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>文件上传</h1>
+</div>
+
+<div class="upload-section">
+    <form id="upload-form" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="file">选择文件</label>
+            <input type="file" name="file" id="file" required>
+            <small>最大文件大小: 16MB</small>
+        </div>
+        <button type="submit" class="btn">上传文件</button>
+    </form>
+    
+    <div id="result" class="result"></div>
+</div>
+
+<script>
+document.getElementById('upload-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const result = document.getElementById('result');
+    
+    try {
+        const response = await fetch('{{ url_for("main.upload") }}', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        result.innerHTML = data.success 
+            ? `<p class="success">上传成功: ${data.filename}</p>`
+            : `<p class="error">错误: ${data.error}</p>`;
+    } catch (err) {
+        result.innerHTML = `<p class="error">上传失败: ${err.message}</p>`;
+    }
+});
+</script>
+{% endblock %}

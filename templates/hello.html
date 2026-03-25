@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="hello-section">
+    <h1>Hello, <span class="highlight">{{ name }}</span>!</h1>
+    <p>欢迎来到 Flask Web 应用。这是一个带参数的动态页面示例。</p>
+    
+    <div class="card">
+        <h3>试试其他名字</h3>
+        <ul>
+            <li><a href="{{ url_for('main.hello', name='Flask') }}">Hello Flask</a></li>
+            <li><a href="{{ url_for('main.hello', name='Python') }}">Hello Python</a></li>
+            <li><a href="{{ url_for('main.hello', name='Jinja2') }}">Hello Jinja2</a></li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}首页 - Flask App{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>欢迎使用 Flask Web 框架</h1>
+    <p>这是一个基于 Flask + Jinja2 + Werkzeug 的现代化 Web 应用模板</p>
+</div>
+
+<div class="features">
+    <div class="feature-card">
+        <h3>🚀 快速上手</h3>
+        <p>使用 Flask 框架快速构建 Web 应用，支持路由、模板渲染、表单处理等功能。</p>
+    </div>
+    <div class="feature-card">
+        <h3>🎨 Jinja2 模板</h3>
+        <p>强大的模板引擎，支持模板继承、宏定义、过滤器等高级特性。</p>
+    </div>
+    <div class="feature-card">
+        <h3>🔧 Werkzeug 工具</h3>
+        <p>使用 Werkzeug 提供的高级工具集，包括安全文件上传、URL 生成等。</p>
+    </div>
+</div>
+
+<div class="quick-links">
+    <h2>快速链接</h2>
+    <ul>
+        <li><a href="{{ url_for('main.hello', name='World') }}">Hello World 示例</a></li>
+        <li><a href="{{ url_for('main.upload') }}">文件上传</a></li>
+        <li><a href="{{ url_for('main.form') }}">表单处理</a></li>
+        <li><a href="{{ url_for('main.api_data') }}">API 接口</a></li>
+    </ul>
+</div>
+{% endblock %}

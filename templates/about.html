@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}关于 - Flask App{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>关于本项目</h1>
+</div>
+
+<div class="about-section">
+    <h2>技术栈</h2>
+    <ul class="tech-list">
+        <li><strong>Flask</strong> - 轻量级 WSGI Web 框架</li>
+        <li><strong>Jinja2</strong> - Python 模板引擎</li>
+        <li><strong>Werkzeug</strong> - 全面的 WSGI Web 应用程序库</li>
+    </ul>
+
+    <h2>项目结构</h2>
+    <pre><code>flask-web/
+├── app/
+│   ├── __init__.py    # 应用工厂
+│   ├── routes.py      # 路由定义
+│   └── errors.py      # 错误处理
+├── config.py          # 配置文件
+├── run.py             # 启动脚本
+├── requirements.txt   # 依赖列表
+└── uploads/           # 上传文件目录</code></pre>
+
+    <h2>功能特性</h2>
+    <ul>
+        <li>✅ 应用工厂模式</li>
+        <li>✅ 蓝图模块化路由</li>
+        <li>✅ Jinja2 模板继承</li>
+        <li>✅ 错误页面处理</li>
+        <li>✅ 文件上传功能</li>
+        <li>✅ RESTful API</li>
+        <li>✅ 多环境配置</li>
+    </ul>
+</div>
+{% endblock %}
