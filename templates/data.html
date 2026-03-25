@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title or '数据列表' }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📊 数据展示</h1>
+</div>
+
+{% if error %}
+<div class="alert alert-error">
+    <strong>错误:</strong> {{ error }}
+</div>
+{% endif %}
+
+{% if not table_name %}
+<div class="card">
+    <h2>可用数据表</h2>
+    <p>选择一个表查看数据:</p>
+    <div class="table-links">
+        {% for table in tables %}
+        <a href="{{ url_for('main.data_list', table=table) }}" class="table-link">
+            📋 {{ table }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card">
+    <h3>🔍 自定义查询</h3>
+    <form id="query-form">
+        <div class="form-group">
+            <textarea name="query" id="query" rows="3" 
+                      placeholder="输入 SQL 查询 (仅支持 SELECT)" 
+                      class="query-input"></textarea>
+        </div>
+        <button type="submit" class="btn">执行查询</button>
+    </form>
+    <div id="query-result" class="result"></div>
+</div>
+
+{% else %}
+<div class="card">
+    <div class="table-header">
+        <h2>📋 {{ table_name }}</h2>
+        <a href="{{ url_for('main.data_list') }}" class="btn btn-secondary">← 返回表列表</a>
+    </div>
+    
+    {% if data %}
+    <p class="record-count">共 {{ data|length }} 条记录</p>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    {% for key in data[0].keys() %}
+                    <th>{{ key }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data %}
+                <tr>
+                    {% for value in row.values() %}
+                    <td>{{ value if value is not none else '-' }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="no-data">暂无数据</p>
+    {% endif %}
+</div>
+{% endif %}
+
+<style>
+.alert {
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+}
+.alert-error {
+    background: #f8d7da;
+    color: #842029;
+    border: 1px solid #f5c2c7;
+}
+.table-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+.table-link {
+    padding: 0.75rem 1.5rem;
+    background: var(--primary);
+    color: white;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background 0.3s;
+}
+.table-link:hover {
+    background: #357abd;
+}
+.query-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-family: monospace;
+    resize: vertical;
+}
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+.btn-secondary {
+    background: var(--secondary);
+}
+.record-count {
+    color: #666;
+    margin-bottom: 1rem;
+}
+.table-responsive {
+    overflow-x: auto;
+}
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+.data-table th,
+.data-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+.data-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+}
+.data-table tr:hover {
+    background: #f5f5f5;
+}
+.no-data {
+    text-align: center;
+    color: #999;
+    padding: 2rem;
+}
+</style>
+
+<script>
+document.getElementById('query-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const query = document.getElementById('query').value;
+    const result = document.getElementById('query-result');
+    
+    try {
+        const response = await fetch('{{ url_for("main.data_query") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query })
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            let html = `<p class="success">查询成功，返回 ${data.count} 条记录</p>`;
+            if (data.data && data.data.length > 0) {
+                const keys = Object.keys(data.data[0]);
+                html += '<table class="data-table"><thead><tr>';
+                keys.forEach(k => html += `<th>${k}</th>`);
+                html += '</tr></thead><tbody>';
+                data.data.forEach(row => {
+                    html += '<tr>';
+                    keys.forEach(k => html += `<td>${row[k] ?? '-'}</td>`);
+                    html += '</tr>';
+                });
+                html += '</tbody></table>';
+            }
+            result.innerHTML = html;
+        } else {
+            result.innerHTML = `<p class="error">错误: ${data.error}</p>`;
+        }
+    } catch (err) {
+        result.innerHTML = `<p class="error">请求失败: ${err.message}</p>`;
+    }
+});
+</script>
+{% endblock %}
