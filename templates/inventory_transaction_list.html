@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title or '库存流水' }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📋 库存流水</h1>
+    <a href="{{ url_for('main.inventory_list') }}" class="btn btn-secondary">← 返回库存</a>
+</div>
+
+{% if error %}
+<div class="alert alert-error">
+    <strong>错误:</strong> {{ error }}
+</div>
+{% endif %}
+
+<div class="card">
+    <form method="GET" class="search-form">
+        <div class="search-row">
+            <input type="text" name="product_code" placeholder="产品编码" value="{{ product_code }}">
+            <select name="type">
+                <option value="">全部类型</option>
+                <option value="in" {% if transaction_type == 'in' %}selected{% endif %}>入库</option>
+                <option value="out" {% if transaction_type == 'out' %}selected{% endif %}>出库</option>
+            </select>
+            <button type="submit" class="btn">搜索</button>
+            <a href="{{ url_for('main.inventory_transaction') }}" class="btn btn-outline">重置</a>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>时间</th>
+                    <th>产品编码</th>
+                    <th>类型</th>
+                    <th>数量</th>
+                    <th>变动前</th>
+                    <th>变动后</th>
+                    <th>操作员</th>
+                    <th>原因</th>
+                    <th>单据编号</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transactions %}
+                <tr>
+                    <td>{{ t.created_at.strftime('%Y-%m-%d %H:%M') if t.created_at else '-' }}</td>
+                    <td><strong>{{ t.product_code }}</strong></td>
+                    <td>
+                        <span class="type-badge {% if t.transaction_type == 'in' %}in{% else %}out{% endif %}">
+                            {{ '入库' if t.transaction_type == 'in' else '出库' }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="{% if t.transaction_type == 'in' %}text-success{% else %}text-danger{% endif %}">
+                            {{ '+' if t.transaction_type == 'in' else '-' }}{{ t.quantity }}
+                        </span>
+                    </td>
+                    <td>{{ t.stock_before }}</td>
+                    <td>{{ t.stock_after }}</td>
+                    <td>{{ t.operator or '-' }}</td>
+                    <td>{{ t.reason or '-' }}</td>
+                    <td>{{ t.order_no or '-' }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="no-data">暂无流水记录</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.search-form {
+    margin: 0;
+}
+
+.search-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.search-row input[type="text"] {
+    flex: 1;
+    max-width: 200px;
+    padding: 0.6rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+
+.search-row select {
+    padding: 0.6rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    min-width: 100px;
+}
+
+.btn {
+    padding: 0.6rem 1rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-secondary {
+    background: var(--secondary);
+    color: white;
+}
+
+.btn-outline {
+    background: white;
+    border: 1px solid #ddd;
+    color: #666;
+}
+
+.type-badge {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.type-badge.in {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.type-badge.out {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.text-success {
+    color: #2e7d32;
+    font-weight: 600;
+}
+
+.text-danger {
+    color: #c62828;
+    font-weight: 600;
+}
+
+.no-data {
+    text-align: center;
+    color: #999;
+    padding: 2rem;
+}
+</style>
+{% endblock %}

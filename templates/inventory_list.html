@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title or '库存管理' }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📦 库存管理</h1>
+    <div class="header-actions">
+        <a href="{{ url_for('main.inventory_add') }}" class="btn btn-primary">+ 添加库存</a>
+        <a href="{{ url_for('main.inventory_transaction') }}" class="btn btn-secondary">📋 库存流水</a>
+    </div>
+</div>
+
+{% if error %}
+<div class="alert alert-error">
+    <strong>错误:</strong> {{ error }}
+</div>
+{% endif %}
+
+<!-- 统计卡片 -->
+<div class="stats-row">
+    <div class="stat-box">
+        <div class="stat-num">{{ stats.total }}</div>
+        <div class="stat-label">库存品种</div>
+    </div>
+    <div class="stat-box warning">
+        <div class="stat-num">{{ stats.low_stock }}</div>
+        <div class="stat-label">库存不足</div>
+    </div>
+    <div class="stat-box">
+        <div class="stat-num">{{ stats.total_value }}</div>
+        <div class="stat-label">总库存量</div>
+    </div>
+</div>
+
+<!-- 搜索筛选 -->
+<div class="card">
+    <form method="GET" class="search-form">
+        <div class="search-row">
+            <input type="text" name="search" placeholder="搜索产品编码/名称" value="{{ search }}">
+            <select name="category">
+                <option value="">全部分类</option>
+                {% for cat in categories %}
+                <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+            <label class="checkbox-label">
+                <input type="checkbox" name="alert" value="1" {% if alert_only == '1' %}checked{% endif %}>
+                仅显示库存不足
+            </label>
+            <button type="submit" class="btn">搜索</button>
+            <a href="{{ url_for('main.inventory_list') }}" class="btn btn-outline">重置</a>
+        </div>
+    </form>
+</div>
+
+<!-- 库存列表 -->
+<div class="card">
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>产品编码</th>
+                    <th>产品名称</th>
+                    <th>分类</th>
+                    <th>单位</th>
+                    <th>当前库存</th>
+                    <th>最小/最大库存</th>
+                    <th>库位</th>
+                    <th>供应商</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr class="{% if item.current_stock <= item.min_stock %}low-stock{% endif %}">
+                    <td><strong>{{ item.product_code }}</strong></td>
+                    <td>{{ item.product_name }}</td>
+                    <td><span class="tag">{{ item.category or '-' }}</span></td>
+                    <td>{{ item.unit }}</td>
+                    <td>
+                        <span class="stock-num {% if item.current_stock <= item.min_stock %}danger{% endif %}">
+                            {{ item.current_stock }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="threshold">{{ item.min_stock }}</span> / 
+                        <span class="threshold">{{ item.max_stock }}</span>
+                    </td>
+                    <td>{{ item.location or '-' }}</td>
+                    <td>{{ item.supplier or '-' }}</td>
+                    <td>
+                        <div class="action-btns">
+                            <a href="{{ url_for('main.inventory_in', item_id=item.id) }}" class="btn btn-sm btn-success">入库</a>
+                            <a href="{{ url_for('main.inventory_out', item_id=item.id) }}" class="btn btn-sm btn-warning">出库</a>
+                            <a href="{{ url_for('main.inventory_edit', item_id=item.id) }}" class="btn btn-sm">编辑</a>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="no-data">暂无数据</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.stats-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-box {
+    background: white;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.stat-box.warning {
+    background: #fff3e0;
+    border-color: #ffb74d;
+}
+
+.stat-num {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #333;
+}
+
+.stat-box.warning .stat-num {
+    color: #e65100;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: #888;
+    margin-top: 0.25rem;
+}
+
+.search-form {
+    margin: 0;
+}
+
+.search-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.search-row input[type="text"] {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.6rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+
+.search-row select {
+    padding: 0.6rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    min-width: 120px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #218838;
+}
+
+.btn-warning {
+    background: #fd7e14;
+    color: white;
+}
+
+.btn-warning:hover {
+    background: #e8630a;
+}
+
+.btn-outline {
+    background: white;
+    border: 1px solid #ddd;
+    color: #666;
+}
+
+.btn-outline:hover {
+    background: #f5f5f5;
+}
+
+.low-stock {
+    background: #fff8f8;
+}
+
+.tag {
+    padding: 0.2rem 0.5rem;
+    background: #f0f0f0;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.stock-num {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #28a745;
+}
+
+.stock-num.danger {
+    color: #dc3545;
+}
+
+.threshold {
+    color: #888;
+    font-size: 0.85rem;
+}
+
+.action-btns {
+    display: flex;
+    gap: 0.3rem;
+}
+
+.btn-sm {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+    border-radius: 4px;
+    text-decoration: none;
+}
+
+.btn {
+    padding: 0.6rem 1rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-secondary {
+    background: var(--secondary);
+    color: white;
+}
+
+.no-data {
+    text-align: center;
+    color: #999;
+    padding: 2rem;
+}
+</style>
+{% endblock %}

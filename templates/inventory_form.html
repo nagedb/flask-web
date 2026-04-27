@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{{ title }}</h1>
+    <a href="{{ url_for('main.inventory_list') }}" class="btn btn-secondary">← 返回列表</a>
+</div>
+
+<div class="card form-card">
+    <form id="inventory-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="product_code">产品编码 *</label>
+                <input type="text" id="product_code" name="product_code" 
+                       value="{{ item.product_code if item else '' }}"
+                       {% if item %}readonly{% endif %}
+                       placeholder="如: P001" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="product_name">产品名称 *</label>
+                <input type="text" id="product_name" name="product_name" 
+                       value="{{ item.product_name if item else '' }}"
+                       placeholder="如: 笔记本电脑" required>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="category">分类</label>
+                <input type="text" id="category" name="category" 
+                       value="{{ item.category if item else '' }}"
+                       list="category-list"
+                       placeholder="如: 电子产品">
+                <datalist id="category-list">
+                    {% for cat in categories %}
+                    <option value="{{ cat }}">
+                    {% endfor %}
+                </datalist>
+            </div>
+            
+            <div class="form-group">
+                <label for="unit">单位</label>
+                <input type="text" id="unit" name="unit" 
+                       value="{{ item.unit if item else '件' }}"
+                       placeholder="如: 台、个、箱">
+            </div>
+        </div>
+        
+        {% if not item %}
+        <div class="form-row">
+            <div class="form-group">
+                <label for="current_stock">初始库存</label>
+                <input type="number" id="current_stock" name="current_stock" 
+                       value="0" min="0" placeholder="0">
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="min_stock">最小库存</label>
+                <input type="number" id="min_stock" name="min_stock" 
+                       value="{{ item.min_stock if item else 10 }}" min="0">
+            </div>
+            
+            <div class="form-group">
+                <label for="max_stock">最大库存</label>
+                <input type="number" id="max_stock" name="max_stock" 
+                       value="{{ item.max_stock if item else 1000 }}" min="0">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="location">库位</label>
+                <input type="text" id="location" name="location" 
+                       value="{{ item.location if item else '' }}"
+                       placeholder="如: A-01-01">
+            </div>
+            
+            <div class="form-group">
+                <label for="supplier">供应商</label>
+                <input type="text" id="supplier" name="supplier" 
+                       value="{{ item.supplier if item else '' }}"
+                       placeholder="如: 联想集团">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="remark">备注</label>
+            <textarea id="remark" name="remark" rows="3" 
+                      placeholder="可选">{{ item.remark if item else '' }}</textarea>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">保存</button>
+            <a href="{{ url_for('main.inventory_list') }}" class="btn btn-secondary">取消</a>
+        </div>
+    </form>
+    
+    <div id="result" class="result"></div>
+</div>
+
+<style>
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.form-card {
+    max-width: 700px;
+}
+
+.form-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.form-group input[readonly] {
+    background: #f5f5f5;
+    cursor: not-allowed;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+textarea {
+    resize: vertical;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-secondary {
+    background: var(--secondary);
+    color: white;
+}
+
+.result {
+    margin-top: 1rem;
+}
+
+.success {
+    color: #28a745;
+    padding: 1rem;
+    background: #e8f5e9;
+    border-radius: 6px;
+}
+
+.error {
+    color: #dc3545;
+    padding: 1rem;
+    background: #ffebee;
+    border-radius: 6px;
+}
+</style>
+
+<script>
+document.getElementById('inventory-form')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const result = document.getElementById('result');
+    
+    try {
+        const response = await fetch(window.location.href, {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            result.innerHTML = `<p class="success">✅ ${data.message}</p>`;
+            setTimeout(() => {
+                window.location.href = '{{ url_for("main.inventory_list") }}';
+            }, 1500);
+        } else {
+            result.innerHTML = `<p class="error">❌ ${data.error}</p>`;
+        }
+    } catch (err) {
+        result.innerHTML = `<p class="error">❌ 请求失败: ${err.message}</p>`;
+    }
+});
+</script>
+{% endblock %}

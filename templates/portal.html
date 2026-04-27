@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title or '数据监控' }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📊 业务数据监控中心</h1>
+    <span class="last-update">最后更新: {{ last_update }}</span>
+</div>
+
+{% if error %}
+<div class="alert alert-error">
+    <strong>错误:</strong> {{ error }}
+</div>
+{% endif %}
+
+<!-- 统计卡片 -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon customers">👥</div>
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.customers.count }}</div>
+            <div class="stat-label">客户总数</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon orders">📦</div>
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.orders.count }}</div>
+            <div class="stat-label">订单总数</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon products">🏷️</div>
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.products.count }}</div>
+            <div class="stat-label">产品总数</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon tasks">📋</div>
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.tasks.count }}</div>
+            <div class="stat-label">任务总数</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon users">👤</div>
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.users.count }}</div>
+            <div class="stat-label">用户总数</div>
+        </div>
+    </div>
+</div>
+
+<!-- 数据预览表格 -->
+<div class="dashboard-grid">
+    <!-- 客户列表 -->
+    <div class="card table-card">
+        <div class="card-header">
+            <h3>👥 客户列表</h3>
+            <a href="{{ url_for('main.data_list', table='customers') }}" class="btn-link">查看全部 →</a>
+        </div>
+        <div class="table-responsive">
+            <table class="mini-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>名称</th>
+                        <th>公司</th>
+                        <th>邮箱</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in stats.customers.recent %}
+                    <tr>
+                        <td>{{ row.id }}</td>
+                        <td>{{ row.name }}</td>
+                        <td>{{ row.company or '-' }}</td>
+                        <td>{{ row.email or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 产品列表 -->
+    <div class="card table-card">
+        <div class="card-header">
+            <h3>🏷️ 产品列表</h3>
+            <a href="{{ url_for('main.data_list', table='products') }}" class="btn-link">查看全部 →</a>
+        </div>
+        <div class="table-responsive">
+            <table class="mini-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>名称</th>
+                        <th>价格</th>
+                        <th>库存</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in stats.products.recent %}
+                    <tr>
+                        <td>{{ row.id }}</td>
+                        <td>{{ row.name }}</td>
+                        <td>¥{{ row.price }}</td>
+                        <td>
+                            <span class="stock {% if row.stock < 10 %}low{% endif %}">
+                                {{ row.stock }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 任务列表 -->
+    <div class="card table-card">
+        <div class="card-header">
+            <h3>📋 任务列表</h3>
+            <a href="{{ url_for('main.data_list', table='tasks') }}" class="btn-link">查看全部 →</a>
+        </div>
+        <div class="table-responsive">
+            <table class="mini-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>任务名称</th>
+                        <th>状态</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in stats.tasks.recent %}
+                    <tr>
+                        <td>{{ row.id }}</td>
+                        <td>{{ row.name or row.task_name or '-' }}</td>
+                        <td>
+                            <span class="status-badge status-{{ row.status }}">
+                                {{ row.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 用户列表 -->
+    <div class="card table-card">
+        <div class="card-header">
+            <h3>👤 用户列表</h3>
+            <a href="{{ url_for('main.data_list', table='users') }}" class="btn-link">查看全部 →</a>
+        </div>
+        <div class="table-responsive">
+            <table class="mini-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>用户名</th>
+                        <th>邮箱</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in stats.users.recent %}
+                    <tr>
+                        <td>{{ row.id }}</td>
+                        <td>{{ row.username or row.name or '-' }}</td>
+                        <td>{{ row.email or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+.last-update {
+    font-size: 0.85rem;
+    color: #888;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: 1px solid #e8e8e8;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.stat-icon.customers { background: #e3f2fd; }
+.stat-icon.orders { background: #fff3e0; }
+.stat-icon.products { background: #e8f5e9; }
+.stat-icon.tasks { background: #fce4ec; }
+.stat-icon.users { background: #f3e5f5; }
+
+.stat-info {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #333;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: #888;
+    margin-top: 0.25rem;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.table-card {
+    padding: 0;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #eee;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.btn-link {
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+.btn-link:hover {
+    text-decoration: underline;
+}
+
+.mini-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.mini-table th {
+    background: #f8f9fa;
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    color: #666;
+    border-bottom: 1px solid #eee;
+}
+
+.mini-table td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid #f0f0f0;
+    color: #333;
+}
+
+.mini-table tr:last-child td {
+    border-bottom: none;
+}
+
+.mini-table tr:hover {
+    background: #fafafa;
+}
+
+.stock {
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.stock.low {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.status-badge {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-pending { background: #fff3e0; color: #e65100; }
+.status-running { background: #e3f2fd; color: #1565c0; }
+.status-completed { background: #e8f5e9; color: #2e7d32; }
+.status-failed { background: #ffebee; color: #c62828; }
+</style>
+{% endblock %}

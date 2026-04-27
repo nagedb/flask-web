@@ -32,72 +32,38 @@
             </div>
         </div>
 
-        <div class="form-group">
-            <label for="schedule_type">调度类型 *</label>
-            <select name="schedule_type" id="schedule_type" required onchange="updateScheduleFields()">
-                <option value="">-- 选择调度类型 --</option>
-                <option value="cron" {% if config and config.get('schedule_config') and config.schedule_config.get('type') == 'cron' %}selected{% endif %}>
-                    Cron 表达式 (定时任务)
-                </option>
-                <option value="interval" {% if config and config.get('schedule_config') and config.schedule_config.get('type') == 'interval' %}selected{% endif %}>
-                    时间间隔 (周期执行)
-                </option>
-                <option value="once" {% if config and config.get('schedule_config') and config.schedule_config.get('type') == 'once' %}selected{% endif %}>
-                    一次性 (指定时间)
-                </option>
-            </select>
-        </div>
-
-        <!-- Cron 配置 -->
-        <div id="cron-fields" class="schedule-fields" style="display: none;">
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="cron_expression">Cron 表达式 *</label>
-                    <input type="text" name="cron_expression" id="cron_expression"
-                           value="{% if config and config.get('schedule_config') and config.schedule_config.get('type') == 'cron' %}{{ config.schedule_config.get('expression', '') }}{% endif %}"
-                           placeholder="如: 0 9 * * MON-FRI">
-                    <small>格式: 分 时 日 月 周</small>
+        <!-- 调度配置 JSON 编辑器 -->
+        <div class="form-group json-editor-group">
+            <label for="schedule_config_json">调度配置 *</label>
+            <div class="json-editor-wrapper">
+                <div class="json-editor-toolbar">
+                    <span class="json-editor-hint">JSON 格式</span>
+                    <div class="json-editor-actions">
+                        <button type="button" class="btn-tool" onclick="formatJson()">格式化</button>
+                        <button type="button" class="btn-tool" onclick="validateJson()">验证</button>
+                        <button type="button" class="btn-tool" onclick="insertTemplate()">插入模板</button>
+                    </div>
                 </div>
-                
-                <div class="form-group">
-                    <label for="timezone">时区</label>
-                    <input type="text" name="timezone" id="timezone"
-                           value="{% if config and config.get('schedule_config') and config.schedule_config.get('type') == 'cron' %}{{ config.schedule_config.get('timezone', 'Asia/Shanghai') }}{% else %}Asia/Shanghai{% endif %}"
-                           placeholder="Asia/Shanghai">
-                </div>
+                <textarea name="schedule_config_json" id="schedule_config_json"
+                          class="json-textarea" rows="15"
+                          placeholder='{"type": "cron", "expression": "0 9 * * MON-FRI", "timezone": "Asia/Shanghai"}' required>{% if config and config.get('schedule_config') %}{{ config.schedule_config | tojson(indent=2) }}{% endif %}</textarea>
+                <div id="json-status" class="json-status"></div>
             </div>
         </div>
 
-        <!-- 时间间隔配置 -->
-        <div id="interval-fields" class="schedule-fields" style="display: none;">
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="interval_minutes">间隔分钟数 *</label>
-                    <input type="number" name="interval_minutes" id="interval_minutes"
-                           value="{% if config and config.get('schedule_config') and config.schedule_config.get('type') == 'interval' %}{{ config.schedule_config.get('interval_minutes', 30) }}{% else %}30{% endif %}"
-                           min="1" placeholder="30">
-                </div>
-                
-                <div class="form-group">
-                    <label for="start_time">开始时间</label>
-                    <input type="time" name="start_time" id="start_time"
-                           value="{% if config and config.get('schedule_config') and config.schedule_config.get('type') == 'interval' %}{{ config.schedule_config.get('start_time', '08:00') }}{% else %}08:00{% endif %}">
-                </div>
-                
-                <div class="form-group">
-                    <label for="end_time">结束时间</label>
-                    <input type="time" name="end_time" id="end_time"
-                           value="{% if config and config.get('schedule_config') and config.schedule_config.get('type') == 'interval' %}{{ config.schedule_config.get('end_time', '18:00') }}{% else %}18:00{% endif %}">
-                </div>
-            </div>
-        </div>
-
-        <!-- 一次性配置 -->
-        <div id="once-fields" class="schedule-fields" style="display: none;">
-            <div class="form-group">
-                <label for="execute_time">执行时间 *</label>
-                <input type="datetime-local" name="execute_time" id="execute_time"
-                       value="{% if config and config.get('schedule_config') and config.schedule_config.get('type') == 'once' %}{{ config.schedule_config.get('execute_time', '').replace(' ', 'T') }}{% endif %}">
+        <!-- 模板选择 -->
+        <div id="template-panel" class="template-panel" style="display:none;">
+            <p class="template-title">选择模板：</p>
+            <div class="template-list">
+                <button type="button" class="btn-template" onclick="applyTemplate('cron')">
+                    Cron 定时任务
+                </button>
+                <button type="button" class="btn-template" onclick="applyTemplate('interval')">
+                    时间间隔
+                </button>
+                <button type="button" class="btn-template" onclick="applyTemplate('once')">
+                    一次性执行
+                </button>
             </div>
         </div>
 
@@ -159,11 +125,118 @@
     font-size: 0.85rem;
 }
 
-.schedule-fields {
-    background: #f9f9f9;
-    padding: 1rem;
+.json-editor-group {
+    align-items: flex-start !important;
+}
+
+.json-editor-wrapper {
+    flex: 1;
+    border: 1px solid #ddd;
     border-radius: 6px;
+    overflow: hidden;
+}
+
+.json-editor-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background: #f0f0f0;
+    border-bottom: 1px solid #ddd;
+}
+
+.json-editor-hint {
+    font-size: 0.8rem;
+    color: #888;
+    font-family: monospace;
+}
+
+.json-editor-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-tool {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8rem;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #444;
+}
+
+.btn-tool:hover {
+    background: #e8e8e8;
+}
+
+.json-textarea {
+    width: 100%;
+    min-height: 300px;
+    padding: 0.75rem;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    border: none;
+    outline: none;
+    resize: vertical;
+    box-sizing: border-box;
+    background: #fafafa;
+    color: #333;
+}
+
+.json-textarea:focus {
+    background: #fff;
+}
+
+.json-status {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+    min-height: 1.5rem;
+}
+
+.json-status.valid {
+    color: #28a745;
+    background: #f0fff4;
+}
+
+.json-status.invalid {
+    color: #dc3545;
+    background: #fff5f5;
+}
+
+.template-panel {
     margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+}
+
+.template-title {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.template-list {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-template {
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
+    background: #fff;
+    border: 1px solid #4a90d9;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #4a90d9;
+}
+
+.btn-template:hover {
+    background: #4a90d9;
+    color: #fff;
 }
 
 .form-actions {
@@ -218,31 +291,108 @@
 </style>
 
 <script>
-function updateScheduleFields() {
-    const type = document.getElementById('schedule_type').value;
-    document.getElementById('cron-fields').style.display = type === 'cron' ? 'block' : 'none';
-    document.getElementById('interval-fields').style.display = type === 'interval' ? 'block' : 'none';
-    document.getElementById('once-fields').style.display = type === 'once' ? 'block' : 'none';
+const TEMPLATES = {
+    cron: {
+        type: "cron",
+        expression: "0 9 * * MON-FRI",
+        timezone: "Asia/Shanghai"
+    },
+    interval: {
+        type: "interval",
+        interval_minutes: 30,
+        start_time: "08:00",
+        end_time: "18:00"
+    },
+    once: {
+        type: "once",
+        execute_time: "2026-01-01 09:00:00"
+    }
+};
+
+function formatJson() {
+    const ta = document.getElementById('schedule_config_json');
+    try {
+        const obj = JSON.parse(ta.value);
+        ta.value = JSON.stringify(obj, null, 2);
+        showStatus('✅ 格式化成功', 'valid');
+    } catch (e) {
+        showStatus('❌ JSON 格式错误: ' + e.message, 'invalid');
+    }
 }
 
-// 页面加载时初始化
+function validateJson() {
+    const ta = document.getElementById('schedule_config_json');
+    try {
+        JSON.parse(ta.value);
+        showStatus('✅ JSON 格式正确', 'valid');
+    } catch (e) {
+        showStatus('❌ JSON 格式错误: ' + e.message, 'invalid');
+    }
+}
+
+function insertTemplate() {
+    const panel = document.getElementById('template-panel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+function applyTemplate(type) {
+    const ta = document.getElementById('schedule_config_json');
+    ta.value = JSON.stringify(TEMPLATES[type], null, 2);
+    document.getElementById('template-panel').style.display = 'none';
+    showStatus('✅ 已插入模板', 'valid');
+}
+
+function showStatus(msg, type) {
+    const el = document.getElementById('json-status');
+    el.textContent = msg;
+    el.className = 'json-status ' + type;
+    setTimeout(() => { el.textContent = ''; el.className = 'json-status'; }, 3000);
+}
+
+// 实时验证
 document.addEventListener('DOMContentLoaded', () => {
-    updateScheduleFields();
+    const ta = document.getElementById('schedule_config_json');
+    ta.addEventListener('input', () => {
+        if (!ta.value.trim()) return;
+        try {
+            JSON.parse(ta.value);
+            showStatus('✅ JSON 格式正确', 'valid');
+        } catch (e) {
+            showStatus('❌ ' + e.message, 'invalid');
+        }
+    });
+
+    // 如果有初始值，自动格式化
+    if (ta.value.trim()) {
+        try {
+            ta.value = JSON.stringify(JSON.parse(ta.value), null, 2);
+        } catch (e) {}
+    }
 });
 
 // 表单提交
 document.getElementById('schedule-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    // 提交前验证 JSON
+    const ta = document.getElementById('schedule_config_json');
+    try {
+        JSON.parse(ta.value);
+    } catch (err) {
+        document.getElementById('result').innerHTML = `<p class="error">❌ 调度配置 JSON 格式错误: ${err.message}</p>`;
+        return;
+    }
+
     const formData = new FormData(e.target);
     const result = document.getElementById('result');
-    
+
     try {
         const response = await fetch(window.location.href, {
             method: 'POST',
             body: formData
         });
         const data = await response.json();
-        
+
         if (data.success) {
             result.innerHTML = `<p class="success">✅ ${data.message}</p>`;
             setTimeout(() => {

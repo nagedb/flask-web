@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{{ '📥' if action == 'in' else '📤' }} {{ title }}</h1>
+    <a href="{{ url_for('main.inventory_list') }}" class="btn btn-secondary">← 返回列表</a>
+</div>
+
+<div class="card form-card">
+    {% if item %}
+    <div class="product-info">
+        <h3>{{ item.product_name }}</h3>
+        <p>
+            <span class="info-tag">编码: {{ item.product_code }}</span>
+            <span class="info-tag">分类: {{ item.category or '-' }}</span>
+            <span class="info-tag">当前库存: <strong class="{% if item.current_stock <= item.min_stock %}danger{% endif %}">{{ item.current_stock }}</strong> {{ item.unit }}</span>
+        </p>
+    </div>
+    
+    <form id="transaction-form">
+        <div class="form-group">
+            <label for="quantity">{{ '入库' if action == 'in' else '出库' }}数量 *</label>
+            <input type="number" id="quantity" name="quantity" min="1" required placeholder="请输入数量">
+        </div>
+        
+        <div class="form-group">
+            <label for="reason">{{ '入库' if action == 'in' else '出库' }}原因</label>
+            <select id="reason" name="reason">
+                {% if action == 'in' %}
+                <option value="采购入库">采购入库</option>
+                <option value="退货入库">退货入库</option>
+                <option value="调拨入库">调拨入库</option>
+                <option value="其他入库">其他入库</option>
+                {% else %}
+                <option value="销售出库">销售出库</option>
+                <option value="领用出库">领用出库</option>
+                <option value="调拨出库">调拨出库</option>
+                <option value="其他出库">其他出库</option>
+                {% endif %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="order_no">单据编号</label>
+            <input type="text" id="order_no" name="order_no" placeholder="可选">
+        </div>
+        
+        <div class="preview-box">
+            <span class="preview-label">操作后库存:</span>
+            <span id="preview-stock" class="preview-value">-</span>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">确认{{ '入库' if action == 'in' else '出库' }}</button>
+            <a href="{{ url_for('main.inventory_list') }}" class="btn btn-secondary">取消</a>
+        </div>
+    </form>
+    
+    <div id="result" class="result"></div>
+    {% else %}
+    <p class="error">产品不存在</p>
+    <a href="{{ url_for('main.inventory_list') }}" class="btn btn-secondary">返回列表</a>
+    {% endif %}
+</div>
+
+<style>
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.form-card {
+    max-width: 600px;
+}
+
+.product-info {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.product-info h3 {
+    margin: 0 0 0.5rem 0;
+}
+
+.info-tag {
+    display: inline-block;
+    margin-right: 1rem;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.info-tag strong.danger {
+    color: #dc3545;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.preview-box {
+    background: #e8f5e9;
+    padding: 1rem;
+    border-radius: 6px;
+    margin: 1.5rem 0;
+    text-align: center;
+}
+
+.preview-label {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.preview-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #28a745;
+    margin-left: 0.5rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-secondary {
+    background: var(--secondary);
+    color: white;
+}
+
+.result {
+    margin-top: 1rem;
+}
+
+.success {
+    color: #28a745;
+    padding: 1rem;
+    background: #e8f5e9;
+    border-radius: 6px;
+}
+
+.error {
+    color: #dc3545;
+    padding: 1rem;
+    background: #ffebee;
+    border-radius: 6px;
+}
+</style>
+
+<script>
+const currentStock = {{ item.current_stock if item else 0 }};
+const action = '{{ action }}';
+
+// 实时计算库存
+document.getElementById('quantity')?.addEventListener('input', function() {
+    const qty = parseInt(this.value) || 0;
+    const newStock = action === 'in' ? currentStock + qty : currentStock - qty;
+    const previewEl = document.getElementById('preview-stock');
+    previewEl.textContent = newStock;
+    previewEl.style.color = newStock < 0 ? '#dc3545' : '#28a745';
+});
+
+// 表单提交
+document.getElementById('transaction-form')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const result = document.getElementById('result');
+    
+    try {
+        const response = await fetch(window.location.href, {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            result.innerHTML = `<p class="success">✅ ${data.message}</p>`;
+            setTimeout(() => {
+                window.location.href = '{{ url_for("main.inventory_list") }}';
+            }, 1500);
+        } else {
+            result.innerHTML = `<p class="error">❌ ${data.error}</p>`;
+        }
+    } catch (err) {
+        result.innerHTML = `<p class="error">❌ 请求失败: ${err.message}</p>`;
+    }
+});
+</script>
+{% endblock %}
